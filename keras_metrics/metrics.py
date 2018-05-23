@@ -1,5 +1,6 @@
 from keras import backend as K
 from keras.layers import Layer
+from operator import truediv
 
 
 def _int32(y_true, y_pred):
@@ -142,7 +143,9 @@ class recall(Layer):
     def __call__(self, y_true, y_pred):
         tp = self.tp(y_true, y_pred)
         fn = self.fn(y_true, y_pred)
-        return tp / K.maximum((tp + fn), self.capping)
+
+        div = K.maximum((tp + fn), self.capping)
+        return truediv(tp, div)
 
 
 class precision(Layer):
@@ -167,4 +170,6 @@ class precision(Layer):
     def __call__(self, y_true, y_pred):
         tp = self.tp(y_true, y_pred)
         fp = self.fp(y_true, y_pred)
-        return tp / K.maximum((tp + fp), self.capping)
+
+        div = K.maximum((tp + fp), self.capping)
+        return truediv(tp, div)
