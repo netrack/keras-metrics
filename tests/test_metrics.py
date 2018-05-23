@@ -16,16 +16,15 @@ class TestMetrics(unittest.TestCase):
 
         model = keras.models.Sequential()
         model.add(keras.layers.Dense(1, activation="sigmoid", input_dim=2))
-        model.add(keras.layers.Dense(2, activation="softmax"))
+        model.add(keras.layers.Dense(1, activation="softmax"))
 
         model.compile(optimizer="sgd",
-                      loss="categorical_crossentropy",
+                      loss="binary_crossentropy",
                       metrics=[tp, fp, fn, precision, recall])
 
         samples = 1000
         x = numpy.random.random((samples, 2))
-        y = numpy.random.randint(low=1, high=2, size=(samples, 1))
-        y = keras.utils.to_categorical(y)
+        y = numpy.random.randint(2, size=(samples, 1))
 
         model.fit(x, y, epochs=1, batch_size=10)
         metrics = model.evaluate(x, y, batch_size=10)[1:]

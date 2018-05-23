@@ -132,6 +132,7 @@ class recall(Layer):
 
         self.tp = true_positive()
         self.fn = false_negative()
+        self.capping = K.constant(1, dtype="int32")
 
     def reset_states(self):
         """Reset the state of the metrics."""
@@ -141,7 +142,7 @@ class recall(Layer):
     def __call__(self, y_true, y_pred):
         tp = self.tp(y_true, y_pred)
         fn = self.fn(y_true, y_pred)
-        return tp / (tp + fn)
+        return tp / K.maximum((tp + fn), self.capping)
 
 
 class precision(Layer):
@@ -156,6 +157,7 @@ class precision(Layer):
 
         self.tp = true_positive()
         self.fp = false_positive()
+        self.capping = K.constant(1, dtype="int32")
 
     def reset_states(self):
         """Reset the state of the metrics."""
@@ -165,4 +167,4 @@ class precision(Layer):
     def __call__(self, y_true, y_pred):
         tp = self.tp(y_true, y_pred)
         fp = self.fp(y_true, y_pred)
-        return tp / (tp + fp)
+        return tp / K.maximum((tp + fp), self.capping)
