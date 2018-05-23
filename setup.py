@@ -15,6 +15,7 @@ setuptools.setup(
     version=keras_metrics.__version__,
 
     long_description=long_description,
+    long_description_content_type="text/markdown",
     description="Metrics for Keras model evaluation",
 
     url="https://github.com/netrack/keras-metrics",
