@@ -3,7 +3,7 @@ import os
 import setuptools
 
 
-long_desctipion = """\
+long_description = """\
 This package provides metrics for evaluation of Keras classification models. The
 metrics are safe to use for batch-based model evaluation.
 """
@@ -12,8 +12,7 @@ setuptools.setup(
     name="keras-metrics",
     version=keras_metrics.__version__,
 
-    long_desctipion=long_description,
-    long_description_content_type="text/markdown",
+    long_description=long_description,
     description="Metrics for Keras model evaluation",
 
     url="https://github.com/netrack/keras-metrics",
