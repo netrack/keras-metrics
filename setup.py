@@ -3,10 +3,12 @@ import os
 import setuptools
 
 
-long_description = """\
-This package provides metrics for evaluation of Keras classification models. The
-metrics are safe to use for batch-based model evaluation.
-"""
+here = os.path.abspath(os.path.dirname(__file__))
+
+# Get the long description from the README file.
+with open(os.path.join(here, "README.md"), encoding="utf-8") as md:
+    long_description = md.read()
+
 
 setuptools.setup(
     name="keras-metrics",
