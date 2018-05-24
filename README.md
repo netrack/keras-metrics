@@ -1,5 +1,7 @@
 # Keras Metrics
 
+[![Build Status][BuildStatus]](https://travis-ci.org/netrack/keras-metrics)
+
 This package provides metrics for evaluation of Keras classification models.
 The metrics are safe to use for batch-based model evaluation.
 
@@ -26,3 +28,5 @@ model.compile(optimizer="sgd",
               loss="binary_crossentropy",
               metrics=[keras_metrics.precision(), keras_metrics.recall()])
 ```
+
+[BuildStatus]: https://travis-ci.org/netrack/keras-metrics.svg?branch=master
