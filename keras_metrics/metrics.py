@@ -6,6 +6,11 @@ from operator import truediv
 def _int32(y_true, y_pred):
     y_true = K.cast(y_true, "int32")
     y_pred = K.cast(K.round(y_pred), "int32")
+    
+    if y_pred.shape[1] != 1:
+      y_pred = y_pred[:,1:2]
+      y_true = y_true[:,1:2]
+      
     return y_true, y_pred
 
 
