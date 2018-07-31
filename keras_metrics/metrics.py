@@ -34,7 +34,7 @@ class true_positive(Layer):
         K.set_value(self.tp, 0)
 
     def __call__(self, y_true, y_pred):
-        y_true, y_pred = unit_adjustment(y_true, y_pred):
+        y_true, y_pred = unit_adjustment(y_true, y_pred)
         y_true, y_pred = _int32(y_true, y_pred)
 
         tp = K.sum(y_true * y_pred)
@@ -62,7 +62,7 @@ class true_negative(Layer):
         K.set_value(self.tn, 0)
 
     def __call__(self, y_true, y_pred):
-        y_true, y_pred = unit_adjustment(y_true, y_pred):
+        y_true, y_pred = unit_adjustment(y_true, y_pred)
         y_true, y_pred = _int32(y_true, y_pred)
 
         neg_y_true = 1 - y_true
@@ -93,7 +93,7 @@ class false_negative(Layer):
         K.set_value(self.fn, 0)
 
     def __call__(self, y_true, y_pred):
-        y_true, y_pred = unit_adjustment(y_true, y_pred):
+        y_true, y_pred = unit_adjustment(y_true, y_pred)
         y_true, y_pred = _int32(y_true, y_pred)
         neg_y_pred = 1 - y_pred
 
@@ -122,7 +122,7 @@ class false_positive(Layer):
         K.set_value(self.fp, 0)
 
     def __call__(self, y_true, y_pred):
-        y_true, y_pred = unit_adjustment(y_true, y_pred):
+        y_true, y_pred = unit_adjustment(y_true, y_pred)
         y_true, y_pred = _int32(y_true, y_pred)
         neg_y_true = 1 - y_true
 
