@@ -32,6 +32,20 @@ class layer(Layer):
         return self._categorical(y_true, y_pred, dtype)
 
     def _categorical(self, y_true, y_pred, dtype):
+        # In case when user did not specify the label, and the shape
+        # of the output vector has exactly two elements, we can choose
+        # the label automatically.
+        #
+        # When the shape had dimenstion 3 and more and the label is
+        # not specified, we should throw an error as long as calculated
+        # metric is incorrect.
+        _, labels = y_pred.shape
+        if labels == 2:
+            return self._binary(y_true, y_pred, dtype, label=1)
+        elif labels > 2:
+            raise ValueError("With 2 and more output classes a "
+                             "metric label must be specified")
+
         y_true = K.cast(y_true, dtype)
         y_pred = K.cast(K.round(y_pred), dtype)
         return y_true, y_pred
