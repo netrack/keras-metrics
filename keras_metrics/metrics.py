@@ -4,7 +4,7 @@ from operator import truediv
 
 def unit_adjustment(y_true, y_pred):
     if y_pred.shape[1] > 2:
-        raise ValueError('Beware that you have more than two labels for the binary classification.')
+        raise ValueError('You have more than two labels for the binary classification. You can spicify a layer to turn your multi-class problem into binary classification')
     if y_pred.shape[1] == 2:
         y_pred = y_pred[:,1:2]
         y_true = y_true[:,1:2]
