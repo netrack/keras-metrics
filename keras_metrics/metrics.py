@@ -6,8 +6,9 @@ from operator import truediv
 
 class layer(Layer):
 
-    def __init__(self, label=None, **kwargs):
+    def __init__(self, label=None, loss="binary_crossentropy", **kwargs):
         super(layer, self).__init__(**kwargs)
+        self.loss = loss
 
         # If layer metric is explicitly created to evaluate specified class,
         # then use a binary transformation of the output arrays, otherwise
@@ -36,13 +37,13 @@ class layer(Layer):
         # of the output vector has exactly two elements, we can choose
         # the label automatically.
         #
-        # When the shape had dimenstion 3 and more and the label is
+        # When the shape had dimension 3 and more and the label is
         # not specified, we should throw an error as long as calculated
         # metric is incorrect.
         _, labels = y_pred.shape
-        if labels == 2:
+        if self.loss == "binary_crossentropy" and labels == 2:
             return self._binary(y_true, y_pred, dtype, label=1)
-        elif labels > 2:
+        elif self.loss == "binary_crossentropy" and labels > 2:
             raise ValueError("With 2 and more output classes a "
                              "metric label must be specified")
 
