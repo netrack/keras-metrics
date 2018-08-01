@@ -1,20 +1,57 @@
+from functools import partial
 from keras import backend as K
 from keras.layers import Layer
 from operator import truediv
 
 
-def _int32(y_true, y_pred):
-    y_true = K.cast(y_true, "int32")
-    y_pred = K.cast(K.round(y_pred), "int32")
-    
-    if y_pred.shape[1] != 1:
-      y_pred = y_pred[:,1:2]
-      y_true = y_true[:,1:2]
-      
-    return y_true, y_pred
+class layer(Layer):
+
+    def __init__(self, label=None, **kwargs):
+        super(layer, self).__init__(**kwargs)
+
+        # If layer metric is explicitly created to evaluate specified class,
+        # then use a binary transformation of the output arrays, otherwise
+        # calculate an "overal" metric.
+        if label:
+            self.cast_strategy = partial(self._binary, label=label)
+        else:
+            self.cast_strategy = self._categorical
+
+    def cast(self, y_true, y_pred, dtype="int32"):
+        """Convert the specified true and predicted output to the specified
+        destination type (int32 by default).
+        """
+        return self.cast_strategy(y_true, y_pred, dtype=dtype)
+
+    def _binary(self, y_true, y_pred, dtype, label=0):
+        column = slice(label, label+1)
+
+        # Slice a column of the output array.
+        y_true = y_true[:,column]
+        y_pred = y_pred[:,column]
+        return self._categorical(y_true, y_pred, dtype)
+
+    def _categorical(self, y_true, y_pred, dtype):
+        # In case when user did not specify the label, and the shape
+        # of the output vector has exactly two elements, we can choose
+        # the label automatically.
+        #
+        # When the shape had dimenstion 3 and more and the label is
+        # not specified, we should throw an error as long as calculated
+        # metric is incorrect.
+        _, labels = y_pred.shape
+        if labels == 2:
+            return self._binary(y_true, y_pred, dtype, label=1)
+        elif labels > 2:
+            raise ValueError("With 2 and more output classes a "
+                             "metric label must be specified")
+
+        y_true = K.cast(y_true, dtype)
+        y_pred = K.cast(K.round(y_pred), dtype)
+        return y_true, y_pred
 
 
-class true_positive(Layer):
+class true_positive(layer):
     """Create a metric for model's true positives amount calculation.
 
     A true positive is an outcome where the model correctly predicts the
@@ -30,7 +67,7 @@ class true_positive(Layer):
         K.set_value(self.tp, 0)
 
     def __call__(self, y_true, y_pred):
-        y_true, y_pred = _int32(y_true, y_pred)
+        y_true, y_pred = self.cast(y_true, y_pred)
 
         tp = K.sum(y_true * y_pred)
         current_tp = self.tp * 1
@@ -41,7 +78,7 @@ class true_positive(Layer):
         return tp + current_tp
 
 
-class true_negative(Layer):
+class true_negative(layer):
     """Create a metric for model's true negatives amount calculation.
 
     A true negative is an outcome where the model correctly predicts the
@@ -57,7 +94,7 @@ class true_negative(Layer):
         K.set_value(self.tn, 0)
 
     def __call__(self, y_true, y_pred):
-        y_true, y_pred = _int32(y_true, y_pred)
+        y_true, y_pred = self.cast(y_true, y_pred)
 
         neg_y_true = 1 - y_true
         neg_y_pred = 1 - y_pred
@@ -71,7 +108,7 @@ class true_negative(Layer):
         return tn + current_tn
 
 
-class false_negative(Layer):
+class false_negative(layer):
     """Create a metric for model's false negatives amount calculation.
 
     A false negative is an outcome where the model incorrectly predicts the
@@ -87,7 +124,7 @@ class false_negative(Layer):
         K.set_value(self.fn, 0)
 
     def __call__(self, y_true, y_pred):
-        y_true, y_pred = _int32(y_true, y_pred)
+        y_true, y_pred = self.cast(y_true, y_pred)
         neg_y_pred = 1 - y_pred
 
         fn = K.sum(y_true * neg_y_pred)
@@ -99,7 +136,7 @@ class false_negative(Layer):
         return fn + current_fn
 
 
-class false_positive(Layer):
+class false_positive(layer):
     """Create a metric for model's false positive amount calculation.
 
     A false positive is an outcome where the model incorrectly predicts the
@@ -115,7 +152,7 @@ class false_positive(Layer):
         K.set_value(self.fp, 0)
 
     def __call__(self, y_true, y_pred):
-        y_true, y_pred = _int32(y_true, y_pred)
+        y_true, y_pred = self.cast(y_true, y_pred)
         neg_y_true = 1 - y_true
 
         fp = K.sum(neg_y_true * y_pred)
@@ -127,7 +164,7 @@ class false_positive(Layer):
         return fp + current_fp
 
 
-class recall(Layer):
+class recall(layer):
     """Create a metric for model's recall calculation.
 
     Recall measures propotion of actual positives that was indetified correctly.
@@ -153,7 +190,7 @@ class recall(Layer):
         return truediv(tp, div)
 
 
-class precision(Layer):
+class precision(layer):
     """Create  a metric for mode's precision calculation.
 
     Precision measures proportion of positives identifications that were
