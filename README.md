@@ -42,7 +42,7 @@ model.add(keras.layers.Dense(2, activation="softmax"))
 precision = keras_metrics.precision(label=1)
 
 # Calculate recall for the first label.
-recall = keras_metrics.precision(label=0)
+recall = keras_metrics.recall(label=0)
 
 model.compile(optimizer="sgd",
               loss="binary_crossentropy",
