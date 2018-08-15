@@ -191,7 +191,7 @@ class recall(layer):
 
 
 class precision(layer):
-    """Create  a metric for mode's precision calculation.
+    """Create  a metric for model's precision calculation.
 
     Precision measures proportion of positives identifications that were
     actually correct.
@@ -215,3 +215,27 @@ class precision(layer):
 
         div = K.maximum((tp + fp), self.capping)
         return truediv(tp, div)
+
+
+class f1_score(layer):
+    """Create  a metric for the model's F1 score calculation.
+
+    The F1 score is the harmonic mean of precision and recall.
+    """
+
+    def __init__(self, name="f1_score", **kwargs):
+        super(f1_score, self).__init__(name=name, **kwargs)
+
+        self.pr = precision()
+        self.rec = recall()
+
+    def reset_states(self):
+        """Reset the state of the metrics."""
+        self.pr.reset_states()
+        self.rec.reset_states()
+
+    def __call__(self, y_true, y_pred):
+        pr = self.precision(y_true, y_pred)
+        rec = self.recall(y_true, y_pred)
+
+        return 2 * truediv(pr * rec, pr + rec)
