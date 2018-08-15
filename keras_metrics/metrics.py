@@ -218,21 +218,21 @@ class precision(layer):
 
 
 class f1_score(layer):
-    """Create  a metric for the model's F1 score calculation.
+    """Create a metric for the model's F1 score calculation.
 
     The F1 score is the harmonic mean of precision and recall.
     """
 
-    def __init__(self, name="f1_score", **kwargs):
-        super(f1_score, self).__init__(name=name, **kwargs)
+    def __init__(self, name="f1_score", label=None, **kwargs):
+        super(f1_score, self).__init__(name=name, label=label, **kwargs)
 
-        self.pr = precision()
-        self.rec = recall()
+        self.precision = precision(label=label)
+        self.recall = recall(label=label)
 
     def reset_states(self):
         """Reset the state of the metrics."""
-        self.pr.reset_states()
-        self.rec.reset_states()
+        self.precision.reset_states()
+        self.recall.reset_states()
 
     def __call__(self, y_true, y_pred):
         pr = self.precision(y_true, y_pred)
