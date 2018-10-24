@@ -238,4 +238,4 @@ class f1_score(layer):
         pr = self.precision(y_true, y_pred)
         rec = self.recall(y_true, y_pred)
 
-        return 2 * truediv(pr * rec, pr + rec)
+        return 2 * truediv(pr * rec, pr + rec + K.epsilon())
