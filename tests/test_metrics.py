@@ -1,6 +1,7 @@
 import keras
 import keras.backend
 import keras_metrics
+import itertools
 import numpy
 import unittest
 
@@ -35,10 +36,12 @@ class TestMetrics(unittest.TestCase):
         model.fit(x, y, epochs=10, batch_size=batch_size)
         metrics = model.evaluate(x, y, batch_size=batch_size)[1:]
 
-        tp_val = float(metrics[0])
-        tn_val = float(metrics[1])
-        fp_val = float(metrics[2])
-        fn_val = float(metrics[3])
+        metrics = list(map(float, metrics))
+
+        tp_val = metrics[0]
+        tn_val = metrics[1]
+        fp_val = metrics[2]
+        fn_val = metrics[3]
 
         precision = metrics[4]
         recall = metrics[5]
