@@ -58,9 +58,10 @@ class TestMetrics(unittest.TestCase):
 
         self.assertEqual(sum(metrics[0:4]), samples)
 
-        self.assertAlmostEqual(expected_precision, precision)
-        self.assertAlmostEqual(expected_recall, recall)
-        self.assertAlmostEqual(expected_f1, f1)
+        places = 4
+        self.assertAlmostEqual(expected_precision, precision, places=places)
+        self.assertAlmostEqual(expected_recall, recall, places=places)
+        self.assertAlmostEqual(expected_f1, f1, places=places)
 
 
 if __name__ == "__main__":
