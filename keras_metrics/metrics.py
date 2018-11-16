@@ -8,10 +8,12 @@ class layer(Layer):
 
     def __init__(self, label=None, **kwargs):
         super(layer, self).__init__(**kwargs)
+        self.stateful = True
+        self.epsilon = K.constant(K.epsilon(), dtype="float64")
 
         # If layer metric is explicitly created to evaluate specified class,
         # then use a binary transformation of the output arrays, otherwise
-        # calculate an "overal" metric.
+        # calculate an "overall" metric.
         if label:
             self.cast_strategy = partial(self._binary, label=label)
         else:
@@ -36,7 +38,7 @@ class layer(Layer):
         # of the output vector has exactly two elements, we can choose
         # the label automatically.
         #
-        # When the shape had dimenstion 3 and more and the label is
+        # When the shape had dimension 3 and more and the label is
         # not specified, we should throw an error as long as calculated
         # metric is incorrect.
         _, labels = y_pred.shape
@@ -46,7 +48,7 @@ class layer(Layer):
             raise ValueError("With 2 and more output classes a "
                              "metric label must be specified")
 
-        y_true = K.cast(y_true, dtype)
+        y_true = K.cast(K.round(y_true), dtype)
         y_pred = K.cast(K.round(y_pred), dtype)
         return y_true, y_pred
 
@@ -167,7 +169,7 @@ class false_positive(layer):
 class recall(layer):
     """Create a metric for model's recall calculation.
 
-    Recall measures propotion of actual positives that was indetified correctly.
+    Recall measures proportion of actual positives that was identified correctly.
     """
 
     def __init__(self, name="recall", **kwargs):
@@ -175,7 +177,6 @@ class recall(layer):
 
         self.tp = true_positive()
         self.fn = false_negative()
-        self.capping = K.constant(1, dtype="int32")
 
     def reset_states(self):
         """Reset the state of the metrics."""
@@ -186,8 +187,13 @@ class recall(layer):
         tp = self.tp(y_true, y_pred)
         fn = self.fn(y_true, y_pred)
 
-        div = K.maximum((tp + fn), self.capping)
-        return truediv(tp, div)
+        self.add_update(self.tp.updates)
+        self.add_update(self.fn.updates)
+
+        tp = K.cast(tp, self.epsilon.dtype)
+        fn = K.cast(fn, self.epsilon.dtype)
+
+        return truediv(tp, tp + fn + self.epsilon)
 
 
 class precision(layer):
@@ -202,7 +208,6 @@ class precision(layer):
 
         self.tp = true_positive()
         self.fp = false_positive()
-        self.capping = K.constant(1, dtype="int32")
 
     def reset_states(self):
         """Reset the state of the metrics."""
@@ -213,8 +218,13 @@ class precision(layer):
         tp = self.tp(y_true, y_pred)
         fp = self.fp(y_true, y_pred)
 
-        div = K.maximum((tp + fp), self.capping)
-        return truediv(tp, div)
+        self.add_update(self.tp.updates)
+        self.add_update(self.fp.updates)
+
+        tp = K.cast(tp, self.epsilon.dtype)
+        fp = K.cast(fp, self.epsilon.dtype)
+
+        return truediv(tp, tp + fp + self.epsilon)
 
 
 class f1_score(layer):
@@ -237,5 +247,8 @@ class f1_score(layer):
     def __call__(self, y_true, y_pred):
         pr = self.precision(y_true, y_pred)
         rec = self.recall(y_true, y_pred)
+
+        self.add_update(self.precision.updates)
+        self.add_update(self.recall.updates)
 
         return 2 * truediv(pr * rec, pr + rec + K.epsilon())
