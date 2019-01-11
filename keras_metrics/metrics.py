@@ -29,8 +29,8 @@ class layer(Layer):
         column = slice(label, label+1)
 
         # Slice a column of the output array.
-        y_true = y_true[:,column]
-        y_pred = y_pred[:,column]
+        y_true = y_true[...,column]
+        y_pred = y_pred[...,column]
         return self._categorical(y_true, y_pred, dtype)
 
     def _categorical(self, y_true, y_pred, dtype):
@@ -41,7 +41,7 @@ class layer(Layer):
         # When the shape had dimension 3 and more and the label is
         # not specified, we should throw an error as long as calculated
         # metric is incorrect.
-        _, labels = y_pred.shape
+        labels = y_pred.shape[-1]
         if labels == 2:
             return self._binary(y_true, y_pred, dtype, label=1)
         elif labels > 2:
