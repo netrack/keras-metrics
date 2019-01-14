@@ -4,6 +4,7 @@ import keras_metrics
 import itertools
 import numpy
 import unittest
+from keras.models import load_model
 
 
 class TestMetrics(unittest.TestCase):
@@ -66,6 +67,23 @@ class TestMetrics(unittest.TestCase):
         self.assertAlmostEqual(expected_recall, recall, places=places)
         self.assertAlmostEqual(expected_f1, f1, places=places)
 
+        model.save('test.hdf5', overwrite=True)
+
+        del model
+
+        custom_objects = {
+            "true_positive": keras_metrics.true_positive(),
+            "true_negative": keras_metrics.true_negative(),
+            "false_positive": keras_metrics.false_negative(),
+            "false_negative": keras_metrics.false_negative(),
+            "precision": keras_metrics.precision(),
+            "recall": keras_metrics.recall(),
+            "f1_score": keras_metrics.f1_score(),
+            "sin": keras.backend.sin,
+            "abs": keras.backend.abs,
+        }
+
+        model = load_model('test.hdf5', custom_objects=custom_objects)
 
 if __name__ == "__main__":
     unittest.main()

@@ -52,6 +52,10 @@ class layer(Layer):
         y_pred = K.cast(K.round(y_pred), dtype)
         return y_true, y_pred
 
+    def __getattribute__(self, name):
+        if name == "get_config":
+            raise AttributeError
+        return object.__getattribute__(self, name)
 
 class true_positive(layer):
     """Create a metric for model's true positives amount calculation.
@@ -63,6 +67,7 @@ class true_positive(layer):
     def __init__(self, name="true_positive", **kwargs):
         super(true_positive, self).__init__(name=name, **kwargs)
         self.tp = K.variable(0, dtype="int32")
+        self.__name__ = "true_positive"
 
     def reset_states(self):
         """Reset the state of the metric."""
@@ -90,6 +95,7 @@ class true_negative(layer):
     def __init__(self, name="true_negative", **kwargs):
         super(true_negative, self).__init__(name=name, **kwargs)
         self.tn = K.variable(0, dtype="int32")
+        self.__name__ = "true_negative"
 
     def reset_states(self):
         """Reset the state of the metric."""
@@ -120,6 +126,7 @@ class false_negative(layer):
     def __init__(self, name="false_negative", **kwargs):
         super(false_negative, self).__init__(name=name, **kwargs)
         self.fn = K.variable(0, dtype="int32")
+        self.__name__ = "false_negative"
 
     def reset_states(self):
         """Reset the state of the metric."""
@@ -148,6 +155,7 @@ class false_positive(layer):
     def __init__(self, name="false_positive", **kwargs):
         super(false_positive, self).__init__(name=name, **kwargs)
         self.fp = K.variable(0, dtype="int32")
+        self.__name__ = "false_positive"
 
     def reset_states(self):
         """Reset the state of the metric."""
@@ -177,6 +185,7 @@ class recall(layer):
 
         self.tp = true_positive()
         self.fn = false_negative()
+        self.__name__ = "recall"
 
     def reset_states(self):
         """Reset the state of the metrics."""
@@ -208,6 +217,7 @@ class precision(layer):
 
         self.tp = true_positive()
         self.fp = false_positive()
+        self.__name__ = "precision"
 
     def reset_states(self):
         """Reset the state of the metrics."""
@@ -238,6 +248,7 @@ class f1_score(layer):
 
         self.precision = precision(label=label)
         self.recall = recall(label=label)
+        self.__name__ = "f1_score"
 
     def reset_states(self):
         """Reset the state of the metrics."""
