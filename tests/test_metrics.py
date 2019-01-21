@@ -3,13 +3,13 @@ import keras.backend
 import keras_metrics
 import itertools
 import numpy
+import tempfile
 import unittest
-from keras.models import load_model
 
 
 class TestMetrics(unittest.TestCase):
 
-    def test_metrics(self):
+    def setUp(self):
         tp = keras_metrics.true_positive()
         tn = keras_metrics.true_negative()
         fp = keras_metrics.false_positive()
@@ -19,23 +19,52 @@ class TestMetrics(unittest.TestCase):
         recall = keras_metrics.recall()
         f1 = keras_metrics.f1_score()
 
-        model = keras.models.Sequential()
-        model.add(keras.layers.Activation(keras.backend.sin))
-        model.add(keras.layers.Activation(keras.backend.abs))
+        self.model = keras.models.Sequential()
+        self.model.add(keras.layers.Activation(keras.backend.sin))
+        self.model.add(keras.layers.Activation(keras.backend.abs))
 
-        model.compile(optimizer="sgd",
-                      loss="binary_crossentropy",
-                      metrics=[tp, tn, fp, fn, precision, recall, f1])
+        self.model.compile(optimizer="sgd",
+                           loss="binary_crossentropy",
+                           metrics=[tp, tn, fp, fn, precision, recall, f1])
 
+    def samples(self, n):
+        x = numpy.random.uniform(0, numpy.pi/2, (n, 1))
+        y = numpy.random.randint(2, size=(n, 1))
+        return x, y
+
+    def test_save_load(self):
+        custom_objects = {
+            "true_positive": keras_metrics.true_positive(),
+            "true_negative": keras_metrics.true_negative(),
+            "false_positive": keras_metrics.false_positive(),
+            "false_negative": keras_metrics.false_negative(),
+            "precision": keras_metrics.precision(),
+            "recall": keras_metrics.recall(),
+            "f1_score": keras_metrics.f1_score(),
+            "sin": keras.backend.sin,
+            "abs": keras.backend.abs,
+        }
+
+        x, y = self.samples(100)
+        self.model.fit(x, y, epochs=10)
+
+        with tempfile.NamedTemporaryFile() as file:
+            self.model.save(file.name, overwrite=True)
+            model = keras.models.load_model(file.name, custom_objects=custom_objects)
+
+            expected = self.model.evaluate(x, y)[1:]
+            received = model.evaluate(x, y)[1:]
+
+            self.assertEqual(expected, received)
+
+    def test_metrics(self):
         samples = 10000
         batch_size = 100
-        lim = numpy.pi/2
 
-        x = numpy.random.uniform(0, lim, (samples, 1))
-        y = numpy.random.randint(2, size=(samples, 1))
+        x, y = self.samples(samples)
 
-        model.fit(x, y, epochs=10, batch_size=batch_size)
-        metrics = model.evaluate(x, y, batch_size=batch_size)[1:]
+        self.model.fit(x, y, epochs=10, batch_size=batch_size)
+        metrics = self.model.evaluate(x, y, batch_size=batch_size)[1:]
 
         metrics = list(map(float, metrics))
 
@@ -67,23 +96,6 @@ class TestMetrics(unittest.TestCase):
         self.assertAlmostEqual(expected_recall, recall, places=places)
         self.assertAlmostEqual(expected_f1, f1, places=places)
 
-        model.save('test.hdf5', overwrite=True)
-
-        del model
-
-        custom_objects = {
-            "true_positive": keras_metrics.true_positive(),
-            "true_negative": keras_metrics.true_negative(),
-            "false_positive": keras_metrics.false_negative(),
-            "false_negative": keras_metrics.false_negative(),
-            "precision": keras_metrics.precision(),
-            "recall": keras_metrics.recall(),
-            "f1_score": keras_metrics.f1_score(),
-            "sin": keras.backend.sin,
-            "abs": keras.backend.abs,
-        }
-
-        model = load_model('test.hdf5', custom_objects=custom_objects)
 
 if __name__ == "__main__":
     unittest.main()
