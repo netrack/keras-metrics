@@ -6,10 +6,11 @@ from operator import truediv
 
 class layer(Layer):
 
-    def __init__(self, label=None, **kwargs):
-        super(layer, self).__init__(**kwargs)
+    def __init__(self, label=None, name=None, **kwargs):
+        super(layer, self).__init__(name=name, **kwargs)
         self.stateful = True
         self.epsilon = K.constant(K.epsilon(), dtype="float64")
+        self.__name__ = name
 
         # If layer metric is explicitly created to evaluate specified class,
         # then use a binary transformation of the output arrays, otherwise
@@ -52,6 +53,10 @@ class layer(Layer):
         y_pred = K.cast(K.round(y_pred), dtype)
         return y_true, y_pred
 
+    def __getattribute__(self, name):
+        if name == "get_config":
+            raise AttributeError
+        return object.__getattribute__(self, name)
 
 class true_positive(layer):
     """Create a metric for model's true positives amount calculation.

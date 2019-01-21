@@ -119,3 +119,5 @@ Session.vim
 tags
 # Persistent undo
 [._]*.un~
+
+*.hdf5
