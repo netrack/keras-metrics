@@ -6,11 +6,12 @@ from operator import truediv
 
 class layer(Layer):
 
-    def __init__(self, label=None, name=None, **kwargs):
+    def __init__(self, label=None, name=None, sparse=False, **kwargs):
         super(layer, self).__init__(name=name, **kwargs)
         self.stateful = True
         self.epsilon = K.constant(K.epsilon(), dtype="float64")
         self.__name__ = name
+        self.sparse = sparse
 
         # If layer metric is explicitly created to evaluate specified class,
         # then use a binary transformation of the output arrays, otherwise
@@ -30,7 +31,10 @@ class layer(Layer):
         column = slice(label, label+1)
 
         # Slice a column of the output array.
-        y_true = y_true[...,column]
+        if self.sparse:
+            y_true = K.cast(K.equal(y_true, label), dtype=dtype)
+        else:
+            y_true = y_true[...,column]
         y_pred = y_pred[...,column]
         return self._categorical(y_true, y_pred, dtype)
 
@@ -65,8 +69,8 @@ class true_positive(layer):
     positive class.
     """
 
-    def __init__(self, name="true_positive", **kwargs):
-        super(true_positive, self).__init__(name=name, **kwargs)
+    def __init__(self, name="true_positive", label=None, sparse=False, **kwargs):
+        super(true_positive, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
         self.tp = K.variable(0, dtype="int32")
 
     def reset_states(self):
@@ -92,8 +96,8 @@ class true_negative(layer):
     negative class.
     """
 
-    def __init__(self, name="true_negative", **kwargs):
-        super(true_negative, self).__init__(name=name, **kwargs)
+    def __init__(self, name="true_negative", label=None, sparse=False, **kwargs):
+        super(true_negative, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
         self.tn = K.variable(0, dtype="int32")
 
     def reset_states(self):
@@ -122,8 +126,8 @@ class false_negative(layer):
     negative class.
     """
 
-    def __init__(self, name="false_negative", **kwargs):
-        super(false_negative, self).__init__(name=name, **kwargs)
+    def __init__(self, name="false_negative", label=None, sparse=False, **kwargs):
+        super(false_negative, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
         self.fn = K.variable(0, dtype="int32")
 
     def reset_states(self):
@@ -150,8 +154,8 @@ class false_positive(layer):
     positive class.
     """
 
-    def __init__(self, name="false_positive", **kwargs):
-        super(false_positive, self).__init__(name=name, **kwargs)
+    def __init__(self, name="false_positive", label=None, sparse=False, **kwargs):
+        super(false_positive, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
         self.fp = K.variable(0, dtype="int32")
 
     def reset_states(self):
@@ -177,11 +181,11 @@ class recall(layer):
     Recall measures proportion of actual positives that was identified correctly.
     """
 
-    def __init__(self, name="recall", **kwargs):
-        super(recall, self).__init__(name=name, **kwargs)
+    def __init__(self, name="recall", label=None, sparse=False, **kwargs):
+        super(recall, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
 
-        self.tp = true_positive()
-        self.fn = false_negative()
+        self.tp = true_positive(label=label, sparse=sparse)
+        self.fn = false_negative(label=label, sparse=sparse)
 
     def reset_states(self):
         """Reset the state of the metrics."""
@@ -208,11 +212,11 @@ class precision(layer):
     actually correct.
     """
 
-    def __init__(self, name="precision", **kwargs):
-        super(precision, self).__init__(name=name, **kwargs)
+    def __init__(self, name="precision", label=None, sparse=False, **kwargs):
+        super(precision, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
 
-        self.tp = true_positive()
-        self.fp = false_positive()
+        self.tp = true_positive(label=label, sparse=sparse)
+        self.fp = false_positive(label=label, sparse=sparse)
 
     def reset_states(self):
         """Reset the state of the metrics."""
@@ -238,11 +242,11 @@ class f1_score(layer):
     The F1 score is the harmonic mean of precision and recall.
     """
 
-    def __init__(self, name="f1_score", label=None, **kwargs):
-        super(f1_score, self).__init__(name=name, label=label, **kwargs)
+    def __init__(self, name="f1_score", label=None, sparse=False, **kwargs):
+        super(f1_score, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
 
-        self.precision = precision(label=label)
-        self.recall = recall(label=label)
+        self.precision = precision(label=label, sparse=sparse)
+        self.recall = recall(label=label, sparse=sparse)
 
     def reset_states(self):
         """Reset the state of the metrics."""

@@ -9,38 +9,52 @@ import unittest
 
 class TestMetrics(unittest.TestCase):
 
-    def setUp(self):
-        tp = keras_metrics.true_positive()
-        tn = keras_metrics.true_negative()
-        fp = keras_metrics.false_positive()
-        fn = keras_metrics.false_negative()
+    def __init__(self, methodName, sparse=False):
+        super(TestMetrics, self).__init__(methodName=methodName)
+        self.sparse = sparse
 
-        precision = keras_metrics.precision()
-        recall = keras_metrics.recall()
-        f1 = keras_metrics.f1_score()
+    def setUp(self):
+        tp = keras_metrics.true_positive(sparse=self.sparse)
+        tn = keras_metrics.true_negative(sparse=self.sparse)
+        fp = keras_metrics.false_positive(sparse=self.sparse)
+        fn = keras_metrics.false_negative(sparse=self.sparse)
+
+        precision = keras_metrics.precision(sparse=self.sparse)
+        recall = keras_metrics.recall(sparse=self.sparse)
+        f1 = keras_metrics.f1_score(sparse=self.sparse)
 
         self.model = keras.models.Sequential()
         self.model.add(keras.layers.Activation(keras.backend.sin))
         self.model.add(keras.layers.Activation(keras.backend.abs))
 
+        if self.sparse:
+            loss = "sparse_categorical_crossentropy"
+        else:
+            loss = "binary_crossentropy"
+
         self.model.compile(optimizer="sgd",
-                           loss="binary_crossentropy",
+                           loss=loss,
                            metrics=[tp, tn, fp, fn, precision, recall, f1])
 
     def samples(self, n):
-        x = numpy.random.uniform(0, numpy.pi/2, (n, 1))
-        y = numpy.random.randint(2, size=(n, 1))
+        if self.sparse:
+            categories = 2
+            x = numpy.random.uniform(0, numpy.pi/2, (n, categories))
+            y = numpy.random.randint(categories, size=(n, 1))
+        else:
+            x = numpy.random.uniform(0, numpy.pi/2, (n, 1))
+            y = numpy.random.randint(2, size=(n, 1))
         return x, y
 
     def test_save_load(self):
         custom_objects = {
-            "true_positive": keras_metrics.true_positive(),
-            "true_negative": keras_metrics.true_negative(),
-            "false_positive": keras_metrics.false_positive(),
-            "false_negative": keras_metrics.false_negative(),
-            "precision": keras_metrics.precision(),
-            "recall": keras_metrics.recall(),
-            "f1_score": keras_metrics.f1_score(),
+            "true_positive": keras_metrics.true_positive(sparse=self.sparse),
+            "true_negative": keras_metrics.true_negative(sparse=self.sparse),
+            "false_positive": keras_metrics.false_positive(sparse=self.sparse),
+            "false_negative": keras_metrics.false_negative(sparse=self.sparse),
+            "precision": keras_metrics.precision(sparse=self.sparse),
+            "recall": keras_metrics.recall(sparse=self.sparse),
+            "f1_score": keras_metrics.f1_score(sparse=self.sparse),
             "sin": keras.backend.sin,
             "abs": keras.backend.abs,
         }
@@ -97,5 +111,16 @@ class TestMetrics(unittest.TestCase):
         self.assertAlmostEqual(expected_f1, f1, places=places)
 
 
+def suite():
+    s = unittest.TestSuite()
+    s.addTests(TestMetrics(methodName=method, sparse=sparse)
+               for method in unittest.defaultTestLoader.getTestCaseNames(TestMetrics)
+               for sparse in (False, True))
+    return s
+
+
 if __name__ == "__main__":
-    unittest.main()
+    import sys
+    result = unittest.TextTestRunner().run(suite())
+    sys.exit(not result.wasSuccessful())
+    # unittest.main()
