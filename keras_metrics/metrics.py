@@ -6,7 +6,7 @@ from operator import truediv
 
 class layer(Layer):
 
-    def __init__(self, label=None, sparse=False, name=None, **kwargs):
+    def __init__(self, label=None, name=None, sparse=False, **kwargs):
         super(layer, self).__init__(name=name, **kwargs)
         self.stateful = True
         self.epsilon = K.constant(K.epsilon(), dtype="float64")
@@ -69,7 +69,7 @@ class true_positive(layer):
     positive class.
     """
 
-    def __init__(self, label=None, sparse=False, name="true_positive", **kwargs):
+    def __init__(self, name="true_positive", label=None, sparse=False, **kwargs):
         super(true_positive, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
         self.tp = K.variable(0, dtype="int32")
 
@@ -96,7 +96,7 @@ class true_negative(layer):
     negative class.
     """
 
-    def __init__(self, label=None, sparse=False, name="true_negative", **kwargs):
+    def __init__(self, name="true_negative", label=None, sparse=False, **kwargs):
         super(true_negative, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
         self.tn = K.variable(0, dtype="int32")
 
@@ -126,7 +126,7 @@ class false_negative(layer):
     negative class.
     """
 
-    def __init__(self, label=None, sparse=False, name="false_negative", **kwargs):
+    def __init__(self, name="false_negative", label=None, sparse=False, **kwargs):
         super(false_negative, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
         self.fn = K.variable(0, dtype="int32")
 
@@ -154,7 +154,7 @@ class false_positive(layer):
     positive class.
     """
 
-    def __init__(self, label=None, sparse=False, name="false_positive", **kwargs):
+    def __init__(self, name="false_positive", label=None, sparse=False, **kwargs):
         super(false_positive, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
         self.fp = K.variable(0, dtype="int32")
 
@@ -181,7 +181,7 @@ class recall(layer):
     Recall measures proportion of actual positives that was identified correctly.
     """
 
-    def __init__(self, label=None, sparse=False, name="recall", **kwargs):
+    def __init__(self, name="recall", label=None, sparse=False, **kwargs):
         super(recall, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
 
         self.tp = true_positive(label=label, sparse=sparse)
@@ -212,7 +212,7 @@ class precision(layer):
     actually correct.
     """
 
-    def __init__(self, label=None, sparse=False, name="precision", **kwargs):
+    def __init__(self, name="precision", label=None, sparse=False, **kwargs):
         super(precision, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
 
         self.tp = true_positive(label=label, sparse=sparse)
@@ -242,7 +242,7 @@ class f1_score(layer):
     The F1 score is the harmonic mean of precision and recall.
     """
 
-    def __init__(self, label=None, sparse=False, name="f1_score", **kwargs):
+    def __init__(self, name="f1_score", label=None, sparse=False, **kwargs):
         super(f1_score, self).__init__(name=name, label=label, sparse=sparse, **kwargs)
 
         self.precision = precision(label=label, sparse=sparse)
