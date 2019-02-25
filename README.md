@@ -42,7 +42,7 @@ model.add(keras.layers.Dense(2, activation="softmax"))
 precision = km.binary_precision(label=1)
 
 # Calculate recall for the first label.
-recall = km.recall(label=0)
+recall = km.binary_recall(label=0)
 
 model.compile(optimizer="sgd",
               loss="binary_crossentropy",
