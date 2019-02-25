@@ -3,7 +3,7 @@ from keras_metrics import metrics as m
 from keras_metrics import casts
 
 
-__version__ = "0.0.7"
+__version__ = "1.0.0"
 
 
 def metric_fn(cls, cast_strategy):
