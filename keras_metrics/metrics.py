@@ -249,7 +249,7 @@ class average_recall(layer):
         t, p = self.cast(y_true, y_pred, dtype="float64")
 
         # Init a bias matrix
-        b = K.variable([1 / (v + 1) for v in range(self.classes)],
+        b = K.variable([truediv(1, (v + 1)) for v in range(self.classes)],
                        dtype="float64")
 
         # Simulate to_categorical operation
