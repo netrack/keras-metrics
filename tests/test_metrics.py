@@ -62,7 +62,10 @@ class TestMetrics(unittest.TestCase):
         model = keras.models.Sequential()
         model.add(keras.layers.Activation(keras.backend.sin))
         model.add(keras.layers.Activation(keras.backend.abs))
-        model.add(keras.layers.Dense(outputs, activation='softmax'))
+        model.add(keras.layers.Lambda(lambda x: K.concatenate([x]*outputs)))
+        scale = [v + 1 for v in range(outputs)]
+        model.add(keras.layers.Lambda(lambda x: (0.5 - x) * scale + 1))
+        model.add(keras.layers.Softmax())
         model.compile(optimizer="sgd",
                       loss=loss,
                       metrics=self.create_metrics(metrics_fns))
