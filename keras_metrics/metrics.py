@@ -226,3 +226,54 @@ class f1_score(layer):
         self.add_update(self.recall.updates)
 
         return 2 * truediv(pr * rec, pr + rec + K.epsilon())
+
+
+class average_recall(layer):
+    """Create a metric for the average recall calculation.
+    """
+
+    def __init__(self, name="average_recall", classes=2, **kwargs):
+        super(average_recall, self).__init__(name=name, **kwargs)
+
+        self.classes = classes
+
+        self.true = K.zeros(classes, dtype="int32")
+        self.pred = K.zeros(classes, dtype="int32")
+
+    def reset_states(self):
+        K.set_value(self.true, [0 for v in range(self.classes)])
+        K.set_value(self.pred, [0 for v in range(self.classes)])
+
+    def __call__(self, y_true, y_pred):
+        # Cast input
+        t, p = self.cast(y_true, y_pred, dtype="float64")
+
+        # Init a bias matrix
+        b = K.variable([truediv(1, (v + 1)) for v in range(self.classes)],
+                       dtype="float64")
+
+        # Simulate to_categorical operation
+        t, p = K.expand_dims(t, axis=-1), K.expand_dims(p, axis=-1)
+        t, p = (t + 1) * b - 1, (p + 1) * b - 1
+
+        # Make correct position filled with 1
+        t, p = K.cast(t, "bool"), K.cast(p, "bool")
+        t, p = 1 - K.cast(t, "int32"), 1 - K.cast(p, "int32")
+
+        t, p = K.transpose(t), K.transpose(p)
+
+        # Results for current batch
+        batch_t = K.sum(t, axis=-1)
+        batch_p = K.sum(t * p, axis=-1)
+
+        # Accumulated results
+        total_t = self.true * 1 + batch_t
+        total_p = self.pred * 1 + batch_p
+
+        self.add_update(K.update_add(self.true, batch_t))
+        self.add_update(K.update_add(self.pred, batch_p))
+
+        tp = K.cast(total_p, dtype='float64')
+        tt = K.cast(total_t, dtype='float64')
+
+        return K.mean(truediv(tp, (tt + self.epsilon)))
