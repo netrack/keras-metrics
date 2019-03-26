@@ -235,6 +235,9 @@ class average_recall(layer):
     def __init__(self, name="average_recall", classes=2, **kwargs):
         super(average_recall, self).__init__(name=name, **kwargs)
 
+        if classes < 2:
+            raise ValueError('argument classes must >= 2')
+
         self.classes = classes
 
         self.true = K.zeros(classes, dtype="int32")
