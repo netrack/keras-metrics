@@ -232,51 +232,33 @@ class average_recall(layer):
     """Create a metric for the average recall calculation.
     """
 
-    def __init__(self, name="average_recall", classes=2, **kwargs):
+    def __init__(self, name="average_recall", labels=1, **kwargs):
         super(average_recall, self).__init__(name=name, **kwargs)
 
-        if classes < 2:
-            raise ValueError('argument classes must >= 2')
+        self.labels = labels
 
-        self.classes = classes
-
-        self.true = K.zeros(classes, dtype="int32")
-        self.pred = K.zeros(classes, dtype="int32")
+        self.tp = K.zeros(labels, dtype="int32")
+        self.fn = K.zeros(labels, dtype="int32")
 
     def reset_states(self):
-        K.set_value(self.true, [0 for v in range(self.classes)])
-        K.set_value(self.pred, [0 for v in range(self.classes)])
+        K.set_value(self.tp, [0]*self.labels)
+        K.set_value(self.fn, [0]*self.labels)
 
     def __call__(self, y_true, y_pred):
-        # Cast input
-        t, p = self.cast(y_true, y_pred, dtype="float64")
+        y_true = K.cast(K.round(y_true), "int32")
+        y_pred = K.cast(K.round(y_pred), "int32")
+        neg_y_pred = 1 - y_pred
 
-        # Init a bias matrix
-        b = K.variable([truediv(1, (v + 1)) for v in range(self.classes)],
-                       dtype="float64")
+        tp = K.sum(K.transpose(y_true * y_pred), axis=-1)
+        fn = K.sum(K.transpose(y_true * neg_y_pred), axis=-1)
 
-        # Simulate to_categorical operation
-        t, p = K.expand_dims(t, axis=-1), K.expand_dims(p, axis=-1)
-        t, p = (t + 1) * b - 1, (p + 1) * b - 1
+        current_tp = K.cast(self.tp + tp, self.epsilon.dtype)
+        current_fn = K.cast(self.fn + fn, self.epsilon.dtype)
 
-        # Make correct position filled with 1
-        t, p = K.cast(t, "bool"), K.cast(p, "bool")
-        t, p = 1 - K.cast(t, "int32"), 1 - K.cast(p, "int32")
+        tp_update = K.update_add(self.tp, tp)
+        fn_update = K.update_add(self.fn, fn)
 
-        t, p = K.transpose(t), K.transpose(p)
+        self.add_update(tp_update, inputs=[y_true, y_pred])
+        self.add_update(fn_update, inputs=[y_true, y_pred])
 
-        # Results for current batch
-        batch_t = K.sum(t, axis=-1)
-        batch_p = K.sum(t * p, axis=-1)
-
-        # Accumulated results
-        total_t = self.true * 1 + batch_t
-        total_p = self.pred * 1 + batch_p
-
-        self.add_update(K.update_add(self.true, batch_t))
-        self.add_update(K.update_add(self.pred, batch_p))
-
-        tp = K.cast(total_p, dtype='float64')
-        tt = K.cast(total_t, dtype='float64')
-
-        return K.mean(truediv(tp, (tt + self.epsilon)))
+        return K.mean(truediv(current_tp, current_tp + current_fn + self.epsilon))
