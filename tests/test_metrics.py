@@ -1,7 +1,6 @@
 import keras
 import keras.backend
 import keras.utils
-import keras.regularizers
 import keras_metrics as km
 import itertools
 import numpy
@@ -21,7 +20,6 @@ class TestMetrics(unittest.TestCase):
         km.binary_precision,
         km.binary_recall,
         km.binary_f1_score,
-        km.binary_average_recall
     ]
 
     categorical_metrics = [
@@ -32,7 +30,6 @@ class TestMetrics(unittest.TestCase):
         km.categorical_precision,
         km.categorical_recall,
         km.categorical_f1_score,
-        km.categorical_average_recall,
     ]
 
     sparse_categorical_metrics = [
@@ -43,7 +40,6 @@ class TestMetrics(unittest.TestCase):
         km.sparse_categorical_precision,
         km.sparse_categorical_recall,
         km.sparse_categorical_f1_score,
-        km.sparse_categorical_average_recall,
     ]
 
     def create_binary_samples(self, n):
@@ -63,9 +59,6 @@ class TestMetrics(unittest.TestCase):
         model.add(keras.layers.Activation(keras.backend.sin))
         model.add(keras.layers.Activation(keras.backend.abs))
         model.add(keras.layers.Lambda(lambda x: K.concatenate([x]*outputs)))
-        scale = [v + 1 for v in range(outputs)]
-        model.add(keras.layers.Lambda(lambda x: (0.5 - x) * scale + 1))
-        model.add(keras.layers.Softmax())
         model.compile(optimizer="sgd",
                       loss=loss,
                       metrics=self.create_metrics(metrics_fns))
@@ -132,13 +125,9 @@ class TestMetrics(unittest.TestCase):
         precision = metrics[4]
         recall = metrics[5]
         f1 = metrics[6]
-        average_recall = metrics[7]
 
         expected_precision = tp_val / (tp_val + fp_val)
         expected_recall = tp_val / (tp_val + fn_val)
-
-        expected_average_recall = (
-            expected_recall + (tn_val / (fp_val + tn_val))) / 2
 
         f1_divident = (expected_precision*expected_recall)
         f1_divisor = (expected_precision+expected_recall)
@@ -155,8 +144,6 @@ class TestMetrics(unittest.TestCase):
         self.assertAlmostEqual(expected_precision, precision, places=places)
         self.assertAlmostEqual(expected_recall, recall, places=places)
         self.assertAlmostEqual(expected_f1, f1, places=places)
-        self.assertAlmostEqual(expected_average_recall,
-                               average_recall, places=places)
 
     def test_binary_metrics(self):
         model = self.create_model(1, "binary_crossentropy",
