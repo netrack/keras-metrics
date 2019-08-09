@@ -78,7 +78,7 @@ model.compile(optimizer="sgd",
               metrics=[km.binary_true_positive()])
 
 x = np.array([[0], [1], [0], [1]])
-y = np.array([1, 0, 1, 0]
+y = np.array([1, 0, 1, 0])
 
 # Wrap model.fit into the session with global
 # variables initialization.
