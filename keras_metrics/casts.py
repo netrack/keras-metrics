@@ -18,9 +18,4 @@ def categorical(y_true, y_pred, dtype="int32", label=0):
 
 
 def sparse_categorical(y_true, y_pred, dtype="int32", label=0):
-    y_true = K.cast(K.equal(y_true, label), dtype=dtype)
-
-    y_pred = y_pred[..., slice(label, label+1)]
-    y_pred = K.cast(K.round(y_pred), dtype)
-
-    return y_true, y_pred
+    return categorical(y_true, y_pred)

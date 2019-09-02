@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 from keras import backend as K
+from sklearn.metrics import confusion_matrix
 
 
 class TestMetrics(unittest.TestCase):
@@ -51,6 +52,11 @@ class TestMetrics(unittest.TestCase):
         x, y = self.create_binary_samples(n)
         return x, keras.utils.to_categorical(y)
 
+    def create_sparse_categorical_samples(self, n, num_classes=2):
+        x = numpy.random.uniform(0, numpy.pi/2, (n, 1))
+        y = numpy.random.randint(num_classes, size=(n, 1))
+        return x, y
+
     def create_metrics(self, metrics_fns):
         return list(map(lambda m: m(), metrics_fns))
 
@@ -58,7 +64,7 @@ class TestMetrics(unittest.TestCase):
         model = keras.models.Sequential()
         model.add(keras.layers.Activation(keras.backend.sin))
         model.add(keras.layers.Activation(keras.backend.abs))
-        model.add(keras.layers.Lambda(lambda x: K.concatenate([x]*outputs)))
+        model.add(keras.layers.Dense(outputs, activation="softmax"))
         model.compile(optimizer="sgd",
                       loss=loss,
                       metrics=self.create_metrics(metrics_fns))
@@ -113,25 +119,34 @@ class TestMetrics(unittest.TestCase):
         x, y = samples_fn(samples)
 
         model.fit(x, y, epochs=10, batch_size=batch_size)
-        metrics = model.evaluate(x, y, batch_size=batch_size)[1:]
+        y_pred = model.predict(x).round()
 
+        metrics = model.evaluate(x, y, batch_size=batch_size)[1:]
         metrics = list(map(float, metrics))
+
+        cm = confusion_matrix(y[:,0], y_pred[:,0])
 
         tp_val = metrics[0]
         tn_val = metrics[1]
         fp_val = metrics[2]
         fn_val = metrics[3]
 
+        # Cross validation on SKLearn library.
+        self.assertEqual(tp_val, cm[1][1])
+        self.assertEqual(tn_val, cm[0][0])
+        self.assertEqual(fp_val, cm[0][1])
+        self.assertEqual(fn_val, cm[1][0])
+
         precision = metrics[4]
         recall = metrics[5]
         f1 = metrics[6]
 
-        expected_precision = tp_val / (tp_val + fp_val)
-        expected_recall = tp_val / (tp_val + fn_val)
+        expected_precision = tp_val / (tp_val + fp_val + K.epsilon())
+        expected_recall = tp_val / (tp_val + fn_val + K.epsilon())
 
         f1_divident = (expected_precision*expected_recall)
         f1_divisor = (expected_precision+expected_recall)
-        expected_f1 = (2 * f1_divident / f1_divisor)
+        expected_f1 = 2 * f1_divident / (f1_divisor + K.epsilon())
 
         self.assertGreaterEqual(tp_val, 0.0)
         self.assertGreaterEqual(fp_val, 0.0)
@@ -158,7 +173,7 @@ class TestMetrics(unittest.TestCase):
     def test_sparse_categorical_metrics(self):
         model = self.create_model(2, "sparse_categorical_crossentropy",
                                   self.sparse_categorical_metrics)
-        self.assert_metrics(model, self.create_binary_samples)
+        self.assert_metrics(model, self.create_sparse_categorical_samples)
 
 
 if __name__ == "__main__":
