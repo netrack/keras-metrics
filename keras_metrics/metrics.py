@@ -11,7 +11,17 @@ class layer(Layer):
         self.stateful = True
         self.label = label
         self.cast_strategy = cast_strategy
-        self.epsilon = K.constant(K.epsilon(), dtype="float64")
+        self.epsilon = None
+
+    def init_tensors(self, name=None):
+        """Method to delay initialization of tensors until the first time the
+        metric is called. Allows the class to be pickled and single-file models
+        to be shipped.
+        """
+        if self.epsilon is None:
+            self.epsilon = K.constant(K.epsilon(), dtype="float64")
+        if name and not hasattr(self, name):
+            setattr(self, name, K.variable(0, dtype="int32"))
 
     def cast(self, y_true, y_pred, dtype="int32"):
         """Convert the specified true and predicted output to the specified
@@ -35,13 +45,15 @@ class true_positive(layer):
 
     def __init__(self, name="true_positive", **kwargs):
         super(true_positive, self).__init__(name=name, **kwargs)
-        self.tp = K.variable(0, dtype="int32")
 
     def reset_states(self):
         """Reset the state of the metric."""
         K.set_value(self.tp, 0)
 
     def __call__(self, y_true, y_pred):
+        if self.epsilon is None:
+            self.init_tensors("tp")
+
         y_true, y_pred = self.cast(y_true, y_pred)
 
         tp = K.sum(y_true * y_pred)
@@ -62,13 +74,15 @@ class true_negative(layer):
 
     def __init__(self, name="true_negative", **kwargs):
         super(true_negative, self).__init__(name=name, **kwargs)
-        self.tn = K.variable(0, dtype="int32")
 
     def reset_states(self):
         """Reset the state of the metric."""
         K.set_value(self.tn, 0)
 
     def __call__(self, y_true, y_pred):
+        if self.epsilon is None:
+            self.init_tensors("tn")
+
         y_true, y_pred = self.cast(y_true, y_pred)
 
         neg_y_true = 1 - y_true
@@ -92,13 +106,15 @@ class false_negative(layer):
 
     def __init__(self, name="false_negative", **kwargs):
         super(false_negative, self).__init__(name=name, **kwargs)
-        self.fn = K.variable(0, dtype="int32")
 
     def reset_states(self):
         """Reset the state of the metric."""
         K.set_value(self.fn, 0)
 
     def __call__(self, y_true, y_pred):
+        if self.epsilon is None:
+            self.init_tensors("fn")
+
         y_true, y_pred = self.cast(y_true, y_pred)
         neg_y_pred = 1 - y_pred
 
@@ -120,13 +136,15 @@ class false_positive(layer):
 
     def __init__(self, name="false_positive", **kwargs):
         super(false_positive, self).__init__(name=name, **kwargs)
-        self.fp = K.variable(0, dtype="int32")
 
     def reset_states(self):
         """Reset the state of the metric."""
         K.set_value(self.fp, 0)
 
     def __call__(self, y_true, y_pred):
+        if self.epsilon is None:
+            self.init_tensors("fp")
+
         y_true, y_pred = self.cast(y_true, y_pred)
         neg_y_true = 1 - y_true
 
@@ -158,6 +176,9 @@ class recall(layer):
         self.fn.reset_states()
 
     def __call__(self, y_true, y_pred):
+        if self.epsilon is None:
+            self.init_tensors()
+
         tp = self.tp(y_true, y_pred)
         fn = self.fn(y_true, y_pred)
 
@@ -189,6 +210,9 @@ class precision(layer):
         self.fp.reset_states()
 
     def __call__(self, y_true, y_pred):
+        if self.epsilon is None:
+            self.init_tensors()
+
         tp = self.tp(y_true, y_pred)
         fp = self.fp(y_true, y_pred)
 
@@ -219,6 +243,9 @@ class f1_score(layer):
         self.recall.reset_states()
 
     def __call__(self, y_true, y_pred):
+        if self.epsilon is None:
+            self.init_tensors()
+
         pr = self.precision(y_true, y_pred)
         rec = self.recall(y_true, y_pred)
 
@@ -237,14 +264,20 @@ class average_recall(layer):
 
         self.labels = labels
 
-        self.tp = K.zeros(labels, dtype="int32")
-        self.fn = K.zeros(labels, dtype="int32")
+    def init_tensors(self, name=None):
+        self.epsilon = K.constant(K.epsilon(), dtype="float64")
+        if name and not hasattr(self, name):
+            setattr(self, name, K.zeros(self.labels, dtype="int32"))
 
     def reset_states(self):
         K.set_value(self.tp, [0]*self.labels)
         K.set_value(self.fn, [0]*self.labels)
 
     def __call__(self, y_true, y_pred):
+        if self.epsilon is None:
+            self.init_tensors("tp")
+            self.init_tensors("fn")
+
         y_true = K.cast(K.round(y_true), "int32")
         y_pred = K.cast(K.round(y_pred), "int32")
         neg_y_pred = 1 - y_pred
