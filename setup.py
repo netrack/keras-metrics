@@ -38,5 +38,5 @@ setuptools.setup(
     keywords="keras metrics evaluation",
 
     packages=setuptools.find_packages(exclude=["tests"]),
-    install_requires=["Keras>=2.1.5,<2.3.0"],
+    install_requires=["Keras>=2.1.5"],
 )
