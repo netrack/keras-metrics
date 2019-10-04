@@ -1,5 +1,12 @@
 # Keras Metrics
 
+## Deprecation Warning
+
+Since Keras version `2.3.0`, it provides all metrics available in this package.
+It's preferrable to use metrics from the original Keras package.
+
+This package will be maintained for older version of Keras (`<2.3.0`).
+
 [![Build Status][BuildStatus]](https://travis-ci.org/netrack/keras-metrics)
 
 This package provides metrics for evaluation of Keras classification models.
